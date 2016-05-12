@@ -8,6 +8,7 @@
 #include <ncurses.h>
 #include <signal.h>
 #include <string.h>
+#include <stdbool.h>
 #include "main_screen.h"
 
 #define WIDTH	10
