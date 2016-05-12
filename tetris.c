@@ -39,7 +39,7 @@ void InitTetris(){
 	int i,j;
 
 	for(j=0;j<HEIGHT;j++)
-f	for(i=0;i<WIDTH;i++)
+	for(i=0;i<WIDTH;i++)
 			field[j][i]=0;
 
 	nextBlock[0]=rand()%7;
@@ -102,6 +102,7 @@ int GetCommand(){
 
 int ProcessCommand(int command){
 	int ret=1;
+    int i = 0;
 	int drawFlag=0;
 	switch(command){
 	case QUIT:
@@ -123,6 +124,10 @@ int ProcessCommand(int command){
 		if((drawFlag = CheckToMove(field,nextBlock[0],blockRotate,blockY,blockX-1)))
 			blockX--;
 		break;
+    case ' ':
+        while( CheckToMove(field, nextBlock[0], blockRotate, blockY+(++i), blockX) );
+        blockY += i - 1;
+        break;
 	default:
 		break;
 	}
