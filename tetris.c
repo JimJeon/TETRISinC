@@ -67,11 +67,12 @@ void DrawOutline(){
 	move(2,WIDTH+10);
 	printw("NEXT BLOCK");
 	DrawBox(3,WIDTH+10,4,8);
+    DrawBox(9,WIDTH+10,4,8);
 
 	/* score를 보여주는 공간의 태두리를 그린다.*/
-	move(9,WIDTH+10);
+	move(16,WIDTH+10);
 	printw("SCORE");
-	DrawBox(10,WIDTH+10,1,8);
+	DrawBox(17,WIDTH+10,1,8);
 }
 
 int GetCommand(){
@@ -150,9 +151,8 @@ void DrawField(){
 	}
 }
 
-
 void PrintScore(int score){
-	move(11,WIDTH+11);
+	move(18,WIDTH+11);
 	printw("%8d",score);
 }
 
@@ -165,6 +165,17 @@ void DrawNextBlock(int *nextBlock){
 				attron(COLOR_PAIR(nextBlock[1]+1));
 				printw(" ");
 				attroff(COLOR_PAIR(nextBlock[1]+1));
+			}
+			else printw(" ");
+		}
+	}
+	for( i = 0; i < 4; i++ ){
+		move(10+i,WIDTH+13);
+		for( j = 0; j < 4; j++ ){
+			if( block[nextBlock[2]][0][i][j] == 1 ){
+				attron(COLOR_PAIR(nextBlock[2]+1));
+				printw(" ");
+				attroff(COLOR_PAIR(nextBlock[2]+1));
 			}
 			else printw(" ");
 		}
@@ -290,6 +301,10 @@ void BlockDown(int sig){
 void AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
 	// user code
     int i, j;
+    for(i = 0;i < 4; ++i)
+        for(j = 0;j < 4; ++j)
+        if(block[currentBlock][blockRotate][i][j])
+            if(f[blockY+i+1][blockX+j]||blockY+i+1 >= HEIGHT) score+=10;
     for(i = 0;i < 4; ++i)
         for(j = 0;j < 4; ++j)
             if(block[currentBlock][blockRotate][i][j])
