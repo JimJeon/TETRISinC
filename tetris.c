@@ -11,13 +11,13 @@ int main(){
 	keypad(stdscr, TRUE);
 
     start_color();
-    init_pair(1, COLOR_CYAN, COLOR_CYAN);
-    init_pair(2, COLOR_RED, COLOR_RED);
-    init_pair(3, COLOR_YELLOW, COLOR_YELLOW);
-    init_pair(4, COLOR_BLUE, COLOR_BLUE);
-    init_pair(5, COLOR_WHITE, COLOR_WHITE);
-    init_pair(6, COLOR_MAGENTA, COLOR_MAGENTA);
-    init_pair(7, COLOR_GREEN, COLOR_GREEN);
+    init_pair(1, COLOR_BLACK, COLOR_CYAN);
+    init_pair(2, COLOR_BLACK, COLOR_RED);
+    init_pair(3, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(4, COLOR_BLACK, COLOR_BLUE);
+    init_pair(5, COLOR_BLACK, COLOR_WHITE);
+    init_pair(6, COLOR_BLACK, COLOR_MAGENTA);
+    init_pair(7, COLOR_BLACK, COLOR_GREEN);
 
 	srand((unsigned int)time(NULL));
 
@@ -39,7 +39,7 @@ void InitTetris(){
 	int i,j;
 
 	for(j=0;j<HEIGHT;j++)
-		for(i=0;i<WIDTH;i++)
+f	for(i=0;i<WIDTH;i++)
 			field[j][i]=0;
 
 	nextBlock[0]=rand()%7;
@@ -236,14 +236,6 @@ void play(){
 	newRank(score);
 }
 
-char menu(){
-	printw("1. play\n");
-	printw("2. rank\n");
-	printw("3. recommended play\n");
-	printw("4. exit\n");
-	return wgetch(stdscr);
-}
-
 int CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
 	// user code
     int i, j;
@@ -262,6 +254,7 @@ void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRota
 	// user code
     DrawField();
     DrawBlock(blockY, blockX, currentBlock, blockRotate, ' ');
+    DrawShadow(blockY, blockX, currentBlock, blockRotate);
 }
 
 void BlockDown(int sig){
@@ -322,6 +315,9 @@ int DeleteLine(char f[HEIGHT][WIDTH]){
 
 void DrawShadow(int y, int x, int blockID,int blockRotate){
 	// user code
+    int i = 0;
+    while( CheckToMove(field, blockID, blockRotate, y+(++i), x) );
+    DrawBlock(y+i-1, x, blockID, blockRotate, '/');
 }
 
 void createRankList(){
