@@ -48,7 +48,7 @@ int print_main(const char **choices)
 	box(main_menu_template,0,0);
 
 	// print title logo
-	title_win = newwin(16,118,MAX_y/18,(MAX_x-45)/6);
+	title_win = newwin(16,118,MAX_y/18,MAX_x/2-59);
     
     mvwprintw(title_win,0,0,"TTTTTTTTTTTTTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEEEETTTTTTTTTTTTTTTTTTTTTTTRRRRRRRRRRRRRRRRR   IIIIIIIIII   SSSSSSSSSSSSSSS ");
     mvwprintw(title_win,1,0,"T:::::::::::::::::::::TE::::::::::::::::::::ET:::::::::::::::::::::TR::::::::::::::::R  I::::::::I SS:::::::::::::::S");

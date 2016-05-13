@@ -378,7 +378,7 @@ void createRankList(){
 void rank(){
   // user code
   char user_input = 0;
-  int X = 0, Y = 0, i = 0;
+  int X = -1, Y = -1, i = 0;
   rank_t* tmp_node = head_node;
   printw("1. list ranks from X to Y\n");
   printw("2. list ranks by a specific name\n");
@@ -398,11 +398,19 @@ void rank(){
       scanw("%d",&Y);
       noecho();
      
-      if(X==0) X = 1;
-      if(Y==0) Y = node_num;
+      if(X==-1) X = 1;
+      if(Y==-1) Y = node_num;
       if(Y < X) {
         printw("search failure: no rank in the list\n");
         break;
+      }
+      if(node_num == 0) {
+          printw("search failure: no rankings\n");
+          break;
+      }
+      if(node_num < X) {
+          printw("search failure: bound error\n");
+          break;
       }
 
       printw("       name       |   score   \n");
