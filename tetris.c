@@ -377,9 +377,12 @@ void createRankList(){
 
 void rank(){
   // user code
+  bool flag = true;
+  char search_name[NAMELEN];
   char user_input = 0;
-  int X = -1, Y = -1, i = 0;
+  int X = -1, Y = -1, i = 0, target = 0;
   rank_t* tmp_node = head_node;
+  rank_t* del_node = NULL;
   printw("1. list ranks from X to Y\n");
   printw("2. list ranks by a specific name\n");
   printw("3. delete a specific rank\n");
@@ -390,14 +393,15 @@ void rank(){
   }
 
   switch(user_input) {
-    case '1': 
+    case '1':
+      tmp_node = head_node;
       echo();
       printw("X = ");
       scanw("%d",&X);
       printw("Y = ");
       scanw("%d",&Y);
       noecho();
-     
+
       if(X==-1) X = 1;
       if(Y==-1) Y = node_num;
       if(Y < X) {
@@ -405,12 +409,12 @@ void rank(){
         break;
       }
       if(node_num == 0) {
-          printw("search failure: no rankings\n");
-          break;
+        printw("search failure: no rankings\n");
+        break;
       }
       if(node_num < X) {
-          printw("search failure: bound error\n");
-          break;
+        printw("search failure: bound error\n");
+        break;
       }
 
       printw("       name       |   score   \n");
@@ -421,8 +425,43 @@ void rank(){
         tmp_node = tmp_node->link;
       }
       break;
-    case '2': break;
-    case '3': break;
+    case '2':
+      tmp_node = head_node;
+      printw("input the name: ");
+      echo();
+      scanw("%s", search_name);
+      noecho();
+
+      printw("       name       |   score   \n");
+      printw("------------------------------\n");
+      for(flag = true, tmp_node = head_node ;
+          tmp_node != NULL ; tmp_node = tmp_node->link) {
+        if(strcmp(tmp_node->name, search_name)) continue;
+        printw(" %-17s| %-10d\n", tmp_node->name, tmp_node->score);
+        flag = false;
+      }
+      if(flag)
+        printw("\nsearch failure: no name in the list\n");
+      break;
+    case '3':
+      printw("input the rank: ");
+      echo();
+      scanw("%d", &target);
+      noecho();
+      if(!(1<=target&&target<=node_num)) {
+        printw("\nsearch failure: no rank in the list\n");
+        break;
+      } else {
+        tmp_node = head_node;
+        for(i = 1;i < target - 1; ++i)
+          tmp_node = tmp_node->link;
+        del_node = tmp_node->link;
+        tmp_node->link = del_node->link;
+        free(del_node);
+        node_num--;
+        printw("\nresult: the rank deleted\n");
+      }
+      break;
   }
   wgetch(stdscr);
 }
