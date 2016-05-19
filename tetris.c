@@ -453,14 +453,20 @@ void rank(){
         break;
       } else {
         tmp_node = head_node;
-        for(i = 1;i < target - 1; ++i)
-          tmp_node = tmp_node->link;
-        del_node = tmp_node->link;
-        tmp_node->link = del_node->link;
+        if(target == 1) {
+          del_node = head_node;
+          head_node = del_node->link;
+        } else {
+          for(i = 1;i < target - 1; ++i)
+            tmp_node = tmp_node->link;
+          del_node = tmp_node->link;
+          tmp_node->link = del_node->link;
+        }
         free(del_node);
         node_num--;
         printw("\nresult: the rank deleted\n");
       }
+      writeRankFile();
       break;
   }
   wgetch(stdscr);
