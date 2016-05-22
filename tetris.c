@@ -52,8 +52,8 @@ void InitTetris(){
     for(i=0;i<WIDTH;i++)
       field[j][i]=0;
 
-  nextBlock[0]=rand()%7;
-  nextBlock[1]=rand()%7;
+  for(i = 0;i < BLOCK_NUM; ++i)
+    nextBlock[i] = rand() % 7;
   blockRotate=0;
   blockY=-3;
   blockX=WIDTH/2-2;
@@ -67,6 +67,17 @@ void InitTetris(){
   DrawShadow(blockY, blockX, nextBlock[0], blockRotate);
   DrawNextBlock(nextBlock);
   PrintScore(score);
+
+  recRoot = calloc(1, sizeof(RecNode));
+  recRoot->lv = -1;
+  recRoot->score = 0;
+  recRoot->f = calloc(HEIGHT * WIDTH, sizeof(char));
+  for(i = 0; i < HEIGHT; ++i)
+    for(j = 0;j < WIDTH; ++j)
+      recRoot->f[i][j] = field[i][j];
+  construct_tree(recRoot);
+  recommend(recRoot);
+  DrawRecommend(recommendY,recommendX,nextBlock[0],recommendR);
 }
 
 void DrawOutline(){	
@@ -143,7 +154,6 @@ int ProcessCommand(int command){
     default:
       break;
   }
-  if(drawFlag) DrawChange(field,command,nextBlock[0],blockRotate,blockY,blockX);
   return ret;	
 }
 
@@ -283,21 +293,23 @@ void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRota
   DrawField();
   DrawBlock(blockY, blockX, currentBlock, blockRotate, ' ');
   DrawShadow(blockY, blockX, currentBlock, blockRotate);
+  DrawRecommend(recommendY, recommendX, currentBlock, recommendR);
 }
 
 void BlockDown(int sig){
   // user code
+  int i = 0, j = 0;
   if(CheckToMove(field, nextBlock[0], blockRotate, blockY+1, blockX))
     DrawChange(field, KEY_DOWN, nextBlock[0], blockRotate, ++blockY, blockX);
   else {
     if(blockY == -2) gameOver = 1;
 
-    AddBlockToField(field,nextBlock[0],blockRotate, blockY, blockX);
+    score += AddBlockToField(field,nextBlock[0],blockRotate, blockY, blockX);
     score += DeleteLine(field);
 
-    nextBlock[0] = nextBlock[1];
-    nextBlock[1] = nextBlock[2];
-    nextBlock[2] = rand()%7;
+    for(i = 0;i < BLOCK_NUM - 1; ++i)
+      nextBlock[i] = nextBlock[i+1];
+    nextBlock[i] = rand() % 7;
 
     DrawField();
     DrawNextBlock(nextBlock);
@@ -306,21 +318,27 @@ void BlockDown(int sig){
     blockRotate = 0;
     blockY = -3;
     blockX = WIDTH/2 - 2;
+
+    for(i = 0;i < HEIGHT; ++i)
+      for(j = 0;j < WIDTH; ++j)
+        recRoot->f[i][j] = field[i][j];
+    recommend(recRoot);
   }
   timed_out = 0;
 }
 
-void AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
+int AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
   // user code
-  int i, j;
+  int i, j, point = 0;
   for(i = 0;i < 4; ++i)
     for(j = 0;j < 4; ++j)
       if(block[currentBlock][blockRotate][i][j])
-        if(f[blockY+i+1][blockX+j]||blockY+i+1 >= HEIGHT) score+=10;
+        if(f[blockY+i+1][blockX+j]||blockY+i+1 >= HEIGHT) point+=10;
   for(i = 0;i < 4; ++i)
     for(j = 0;j < 4; ++j)
       if(block[currentBlock][blockRotate][i][j])
         f[blockY+i][blockX+j] = 1;
+  return point;
 }
 
 int DeleteLine(char f[HEIGHT][WIDTH]){
@@ -502,12 +520,42 @@ void newRank(int score){
 
 void DrawRecommend(int y, int x, int blockID,int blockRotate){
   // user code
+  DrawBlock(y,x,blockID,blockRotate,'R');
 }
 
 int recommend(RecNode *root){
-  int max=0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
-
+  int max = 0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
   // user code
+  int x = 0, y = 0, rotation = 0;
+  int i = 0, j = 0, child = 0;
+  int idx = 0;
+
+  if(root->lv == BLOCK_NUM - 1) return 0;
+
+  // initialize child field
+  for(child = 0;child < CHILDREN_MAX; ++child)
+    for(i = 0;i < HEIGHT; ++i)
+      for(j = 0;j < WIDTH; ++j)
+        root->c[child]->f[i][j] = root->f[i][j];
+
+  // calculating child node value
+  for(rotation = 0; rotation < NUM_OF_ROTATE; ++rotation) {
+    for(x = -1; x < WIDTH - 2; ++x) {
+      idx = (WIDTH-1)* rotation + x + 1;
+      y = 0;
+      while( CheckToMove(root->c[idx]->f, nextBlock[root->c[idx]->lv], rotation, ++y, x) );
+      root->c[idx]->score += AddBlockToField(root->c[idx]->f, nextBlock[root->c[idx]->lv], rotation, --y, x);
+      root->c[idx]->score += recommend(root->c[idx]);
+      if(max < root->c[idx]->score) {
+        max = root->c[idx]->score;
+        if(root->lv == -1) {
+          recommendX = x;
+          recommendY = y;
+          recommendR = rotation;
+        }
+      }
+    }
+  }
 
   return max;
 }
@@ -547,3 +595,16 @@ void insert_node(char* name, int score) {
   node_num++;
 }
 
+void construct_tree(RecNode *root) {
+  int i = 0, j = 0;
+  if(root->lv == BLOCK_NUM - 1) return;
+  for(i = 0;i < CHILDREN_MAX; ++i) {
+    root->c[i] = calloc(1,sizeof(RecNode));
+    root->c[i]->lv = root->lv+1;
+    root->c[i]->score = 0;
+    root->c[i]->f = calloc(HEIGHT*WIDTH, sizeof(char));
+    for(j = 0;j < CHILDREN_MAX; ++j)
+      root->c[i]->c[j] = NULL;
+    construct_tree(root->c[i]);
+  }
+}
