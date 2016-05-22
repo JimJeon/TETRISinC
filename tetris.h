@@ -41,14 +41,13 @@ rank_t* head_node = NULL;
 int node_num = 0;
 
 typedef struct _RecNode{
-  int lv;
-  int score;
+  int lv, score;
   char (*f)[WIDTH];
   struct _RecNode *c[CHILDREN_MAX];
 
   int curBlockID;
-  int recBlockX, recBlockY, recBlockRotate;
-  struct _Node *parent;
+  int recBlockX, recBlockY, recBlockR;
+  struct _RecNode *parent;
 } RecNode;
 
 /* [blockShapeID][# of rotate][][]*/

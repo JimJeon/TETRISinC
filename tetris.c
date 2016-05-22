@@ -154,6 +154,7 @@ int ProcessCommand(int command){
     default:
       break;
   }
+  if(drawFlag) DrawChange(field,command,nextBlock[0],blockRotate,blockY,blockX);
   return ret;	
 }
 
@@ -292,8 +293,8 @@ void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRota
   // user code
   DrawField();
   DrawBlock(blockY, blockX, currentBlock, blockRotate, ' ');
-  DrawShadow(blockY, blockX, currentBlock, blockRotate);
   DrawRecommend(recommendY, recommendX, currentBlock, recommendR);
+  DrawShadow(blockY, blockX, currentBlock, blockRotate);
 }
 
 void BlockDown(int sig){
@@ -526,37 +527,66 @@ void DrawRecommend(int y, int x, int blockID,int blockRotate){
 int recommend(RecNode *root){
   int max = 0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
   // user code
-  int x = 0, y = 0, rotation = 0;
-  int i = 0, j = 0, child = 0;
-  int idx = 0;
+  int i = 0, j = 0;
+  int h = 0, w = 0;
+  int tmp = 0;
+
+  if(!(root->lv == -1)) {
+    root->score += AddBlockToField(root->f, root->curBlockID, root->recBlockR, root->recBlockY, root->recBlockX);
+    root->score += DeleteLine(root->f);
+  }
 
   if(root->lv == BLOCK_NUM - 1) return 0;
+  for(i = 0;i < CHILDREN_MAX; ++i) {
+    for(h = 0;h < HEIGHT; ++h)
+      for(w = 0;w < WIDTH; ++w)
+        root->c[i]->f[h][w] = root->f[h][w];
 
-  // initialize child field
-  for(child = 0;child < CHILDREN_MAX; ++child)
-    for(i = 0;i < HEIGHT; ++i)
-      for(j = 0;j < WIDTH; ++j)
-        root->c[child]->f[i][j] = root->f[i][j];
+    root->c[i]->curBlockID = nextBlock[root->c[i]->lv];
+    switch(root->c[i]->curBlockID) {
+      case 0:
+        if(i>16) continue;
+        if(i>6)         root->c[i]->recBlockX = i-7-1,  root->c[i]->recBlockR = 1;
+        else            root->c[i]->recBlockX = i,      root->c[i]->recBlockR = 0;
+        break;
+      case 1:
+      case 2:
+        if(i>33) continue;
+        if(i>24)        root->c[i]->recBlockX = i-25-1, root->c[i]->recBlockR = 3;
+        else if(i>16)   root->c[i]->recBlockX = i-17-1, root->c[i]->recBlockR = 2;
+        else if(i>7)    root->c[i]->recBlockX = i-8-2,  root->c[i]->recBlockR = 1;
+        else            root->c[i]->recBlockX = i-1,    root->c[i]->recBlockR = 0;
+        break;
+      case 3:
+        if(i>33) continue;
+        if(i>24)        root->c[i]->recBlockX = i-25-1,   root->c[i]->recBlockR = 3;
+        else if(i>16)   root->c[i]->recBlockX = i-17,   root->c[i]->recBlockR = 2;
+        else if(i>7)    root->c[i]->recBlockX = i-8,    root->c[i]->recBlockR = 1;
+        else            root->c[i]->recBlockX = i,      root->c[i]->recBlockR = 0;
+        break;
+      case 4:
+        if(i>8) continue;
+        else            root->c[i]->recBlockX = i-1,    root->c[i]->recBlockR = 0;
+        break;
+      case 5:
+      case 6:
+        if(i>16) continue;
+        if(i>7)         root->c[i]->recBlockX = i-8-1,  root->c[i]->recBlockR = 1;
+        else            root->c[i]->recBlockX = i-1,    root->c[i]->recBlockR = 0;
+    }
 
-  // calculating child node value
-  for(rotation = 0; rotation < NUM_OF_ROTATE; ++rotation) {
-    for(x = -1; x < WIDTH - 2; ++x) {
-      idx = (WIDTH-1)* rotation + x + 1;
-      y = 0;
-      while( CheckToMove(root->c[idx]->f, nextBlock[root->c[idx]->lv], rotation, ++y, x) );
-      root->c[idx]->score += AddBlockToField(root->c[idx]->f, nextBlock[root->c[idx]->lv], rotation, --y, x);
-      root->c[idx]->score += recommend(root->c[idx]);
-      if(max < root->c[idx]->score) {
-        max = root->c[idx]->score;
-        if(root->lv == -1) {
-          recommendX = x;
-          recommendY = y;
-          recommendR = rotation;
-        }
+    while( CheckToMove(root->c[i]->f, root->c[i]->curBlockID, root->c[i]->recBlockR, ++(root->c[i]->recBlockY), root->c[i]->recBlockX) );
+    root->c[i]->recBlockY -= 1;
+    tmp = recommend(root->c[i]);
+    if(max < root->score + tmp) {
+      max = root->score + tmp;
+      if(root->c[i]->lv == 0) {
+        recommendX = root->c[i]->recBlockX;
+        recommendY = root->c[i]->recBlockY;
+        recommendR = root->c[i]->recBlockR;
       }
     }
   }
-
   return max;
 }
 
@@ -602,6 +632,11 @@ void construct_tree(RecNode *root) {
     root->c[i] = calloc(1,sizeof(RecNode));
     root->c[i]->lv = root->lv+1;
     root->c[i]->score = 0;
+    root->c[i]->curBlockID = 0;
+    root->c[i]->recBlockX = 0;
+    root->c[i]->recBlockY = 0;
+    root->c[i]->recBlockR = 0;
+    root->c[i]->parent = root;
     root->c[i]->f = calloc(HEIGHT*WIDTH, sizeof(char));
     for(j = 0;j < CHILDREN_MAX; ++j)
       root->c[i]->c[j] = NULL;
