@@ -527,16 +527,16 @@ void DrawRecommend(int y, int x, int blockID,int blockRotate){
 int recommend(RecNode *root){
   int max = 0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
   // user code
-  int i = 0, j = 0;
-  int h = 0, w = 0;
+  int i = 0, h = 0, w = 0;
   int tmp = 0;
+  root->score = 0;
 
   if(!(root->lv == -1)) {
     root->score += AddBlockToField(root->f, root->curBlockID, root->recBlockR, root->recBlockY, root->recBlockX);
     root->score += DeleteLine(root->f);
   }
 
-  if(root->lv == BLOCK_NUM - 1) return 0;
+  if(root->lv == BLOCK_NUM - 1) return root->score;
   for(i = 0;i < CHILDREN_MAX; ++i) {
     for(h = 0;h < HEIGHT; ++h)
       for(w = 0;w < WIDTH; ++w)
@@ -574,7 +574,7 @@ int recommend(RecNode *root){
         if(i>7)         root->c[i]->recBlockX = i-8-1,  root->c[i]->recBlockR = 1;
         else            root->c[i]->recBlockX = i-1,    root->c[i]->recBlockR = 0;
     }
-
+    root->c[i]->recBlockY = 0;
     while( CheckToMove(root->c[i]->f, root->c[i]->curBlockID, root->c[i]->recBlockR, ++(root->c[i]->recBlockY), root->c[i]->recBlockX) );
     root->c[i]->recBlockY -= 1;
     tmp = recommend(root->c[i]);
