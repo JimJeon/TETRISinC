@@ -19,7 +19,7 @@
 #define NUM_OF_ROTATE	4
 #define BLOCK_HEIGHT	4
 #define BLOCK_WIDTH	4
-#define BLOCK_NUM	3
+#define BLOCK_NUM	4
 
 // menu number
 #define MENU_PLAY 1
@@ -42,8 +42,10 @@ int node_num = 0;
 
 typedef struct _RecNode{
   int lv, score;
-  char (*f)[WIDTH];
+  int f[WIDTH];
   struct _RecNode *c[CHILDREN_MAX];
+
+  int vector[4];
 
   int curBlockID;
   int recBlockX, recBlockY, recBlockR;

@@ -72,9 +72,11 @@ void InitTetris(){
   recRoot->lv = -1;
   recRoot->score = 0;
   recRoot->f = calloc(HEIGHT * WIDTH, sizeof(char));
-  for(i = 0; i < HEIGHT; ++i)
-    for(j = 0;j < WIDTH; ++j)
-      recRoot->f[i][j] = field[i][j];
+  for(j = 0;j < WIDTH; ++j) {
+    i = 0;
+    while(field[++i][j] == 0||i<HEIGHT);
+    recRoot->f[j] = HEIGHT - i;
+  }
   construct_tree(recRoot);
   recommend(recRoot);
   DrawRecommend(recommendY,recommendX,nextBlock[0],recommendR);
@@ -320,9 +322,11 @@ void BlockDown(int sig){
     blockY = -3;
     blockX = WIDTH/2 - 2;
 
-    for(i = 0;i < HEIGHT; ++i)
-      for(j = 0;j < WIDTH; ++j)
-        recRoot->f[i][j] = field[i][j];
+    for(j = 0;j < WIDTH; ++j) {
+      i = 0;
+      while(field[++i][j] == 0||i<HEIGHT);
+      recRoot->f[j] = HEIGHT - i;
+    }
     recommend(recRoot);
   }
   timed_out = 0;
@@ -525,22 +529,28 @@ void DrawRecommend(int y, int x, int blockID,int blockRotate){
 }
 
 int recommend(RecNode *root){
-  int max = 0; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
+  RecNode* max = NULL; // 미리 보이는 블럭의 추천 배치까지 고려했을 때 얻을 수 있는 최대 점수
   // user code
   int i = 0, h = 0, w = 0;
   int tmp = 0;
   root->score = 0;
 
-  if(!(root->lv == -1)) {
-    root->score += AddBlockToField(root->f, root->curBlockID, root->recBlockR, root->recBlockY, root->recBlockX);
-    root->score += DeleteLine(root->f);
+
+  if(root->lv != -1) {
+    root->c[i]->score += AddBlockToField(root->f, root->curBlockID, root->recBlockR, root->recBlockY, root->recBlockX);
+    root->c[i]->score += DeleteLine(root->f);
+  // ADD BLOCK
+  // DELETE LINE
+
+    for(i = 0; i < 4; ++i)
+      root->score += weight[i] * root->vector[i];
   }
 
   if(root->lv == BLOCK_NUM - 1) return root->score;
   for(i = 0;i < CHILDREN_MAX; ++i) {
-    for(h = 0;h < HEIGHT; ++h)
-      for(w = 0;w < WIDTH; ++w)
-        root->c[i]->f[h][w] = root->f[h][w];
+
+    for(w = 0;w < WIDTH; ++w)
+      root->c[i]->f[w] = root->f[w];
 
     root->c[i]->curBlockID = nextBlock[root->c[i]->lv];
     switch(root->c[i]->curBlockID) {
@@ -559,7 +569,7 @@ int recommend(RecNode *root){
         break;
       case 3:
         if(i>33) continue;
-        if(i>24)        root->c[i]->recBlockX = i-25-1,   root->c[i]->recBlockR = 3;
+        if(i>24)        root->c[i]->recBlockX = i-25-1, root->c[i]->recBlockR = 3;
         else if(i>16)   root->c[i]->recBlockX = i-17,   root->c[i]->recBlockR = 2;
         else if(i>7)    root->c[i]->recBlockX = i-8,    root->c[i]->recBlockR = 1;
         else            root->c[i]->recBlockX = i,      root->c[i]->recBlockR = 0;
@@ -574,12 +584,15 @@ int recommend(RecNode *root){
         if(i>7)         root->c[i]->recBlockX = i-8-1,  root->c[i]->recBlockR = 1;
         else            root->c[i]->recBlockX = i-1,    root->c[i]->recBlockR = 0;
     }
+
+    // SET VECTORS
     root->c[i]->recBlockY = 0;
     while( CheckToMove(root->c[i]->f, root->c[i]->curBlockID, root->c[i]->recBlockR, ++(root->c[i]->recBlockY), root->c[i]->recBlockX) );
     root->c[i]->recBlockY -= 1;
-    tmp = recommend(root->c[i]);
-    if(max < root->score + tmp) {
-      max = root->score + tmp;
+
+    // GET MAX
+    if(max == NULL || max->score < root->c[i]->score) {
+      max = root->c[i];
       if(root->c[i]->lv == 0) {
         recommendX = root->c[i]->recBlockX;
         recommendY = root->c[i]->recBlockY;
@@ -587,7 +600,7 @@ int recommend(RecNode *root){
       }
     }
   }
-  return max;
+  return max->score;
 }
 
 void recommendedPlay(){
@@ -626,20 +639,12 @@ void insert_node(char* name, int score) {
 }
 
 void construct_tree(RecNode *root) {
-  int i = 0, j = 0;
+  int i;
   if(root->lv == BLOCK_NUM - 1) return;
   for(i = 0;i < CHILDREN_MAX; ++i) {
     root->c[i] = calloc(1,sizeof(RecNode));
     root->c[i]->lv = root->lv+1;
-    root->c[i]->score = 0;
-    root->c[i]->curBlockID = 0;
-    root->c[i]->recBlockX = 0;
-    root->c[i]->recBlockY = 0;
-    root->c[i]->recBlockR = 0;
     root->c[i]->parent = root;
-    root->c[i]->f = calloc(HEIGHT*WIDTH, sizeof(char));
-    for(j = 0;j < CHILDREN_MAX; ++j)
-      root->c[i]->c[j] = NULL;
     construct_tree(root->c[i]);
   }
 }
